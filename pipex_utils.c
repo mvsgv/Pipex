@@ -3,38 +3,68 @@
 /*                                                        :::      ::::::::   */
 /*   pipex_utils.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mavissar <mavissar@student.s19.be>         +#+  +:+       +#+        */
+/*   By: mariamevissargova <mariamevissargova@st    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/07 14:01:26 by mavissar          #+#    #+#             */
-/*   Updated: 2024/10/10 14:49:30 by mavissar         ###   ########.fr       */
+/*   Updated: 2024/10/11 21:49:31 by mariameviss      ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-size_t	ft_strlen(const char *s)
+void    ft_error()
 {
-	size_t	i;
+    perror("Error");
+    exit(EXIT_FAILURE);
+}
+//command = ls , cat etc
+//path str that holds the constructed path to the command
+//part_path combines the directory path with a /
+void    get_path(char *command, char **envp)
+{
+    char    **tab;
+    char    *path;
+    int     i;
+    char    *path_cmd;
 
-	i = 0;
-	while (s[i])
-		i++;
-	return (i);
+    if(!access(command, X_OK))
+        return (command);
+    while (!ft_strnstr(envp[i], "PATH=", 5))
+        i++;
+    tab = ft_split(envp[i] + 5, ':');
+    if (!tab)
+        return (NULL);
+    i = 0;
+    while (tab[i])
+    {
+        path_cmd = ft_strjoin(tab[i++], "/");
+        path = ft_strjoin(path_cmd, command);
+        if (!path_cmd)
+            free(path_cmd);
+        if (!access(path, X_OK))
+            return (path);
+        if (path)
+            free(path);
+    }
+    return (0);
 }
 
-char    *get_path(char *c, char **env)
+void    execution(char **argv, char **envp)
 {
-    
-}
-void    open_file(char *file, int pos)
-{
-    int     res;
+    int     i;
+    char    **cmd;
+    char    *path;
 
-    if (pos == 0)
-        res = open(file, O_RDONLY, 0777);
-    if (pos == 1)
-        res = open (file, O_WRONLY | O_CREAT | O_TRUNC, 0777);
-    if (res = -1)
-        exit (0);
-    return (res);
+    i = -1;
+    cmd = ft_split(argv, ' ');
+    path = get_path(cmd[0], envp);
+    if (path[i])
+    {
+        while (path[++i])
+            free(cmd[i++]);
+        free(cmd);
+        ft_error();        
+    }
+    if (execve(path, cmd, envp) == -1)
+        error(); 
 }

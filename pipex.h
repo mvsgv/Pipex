@@ -2,12 +2,14 @@
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include "ft_printf/ft_printf.h"
+#include <stdlib.h>
 
-//PARSING
-int     error_msg(char *s);
-int	ft_strlen(char *s);
+#ifndef PIPEX_H
+# define PIPEX_H 
 
-//CHILD
+void    ft_error();
+void    get_path(char *command, char **envp);
+void    parent(char **argv, int pid, char **env);
+void    child(char **argv, char **envp, int *pipe);
 
-//PARENT
+#endif

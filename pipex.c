@@ -3,38 +3,46 @@
 /*                                                        :::      ::::::::   */
 /*   pipex.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mavissar <mavissar@student.s19.be>         +#+  +:+       +#+        */
+/*   By: mariamevissargova <mariamevissargova@st    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/07 10:45:16 by mavissar          #+#    #+#             */
-/*   Updated: 2024/10/10 14:57:27 by mavissar         ###   ########.fr       */
+/*   Updated: 2024/10/11 18:50:46 by mariameviss      ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-void    execution(char **argv, char **env)
-{
-    
-}
-
-void    parent(char **argv, int pid, char **env)
+//dup2(fd[0], STDIN_FILENO):replaces the standard input with the reading end of the pipe.
+//This means the parent process will read from the pipe instead of the terminal.
+//dup2(fileout, STDOUT_FILENO):replaces the standard output with the opened file,
+//meaning any output from the parent process will be written to the specified file.
+void    parent(char **argv, char **env, int *pipe)
 {   
-    int     fd;
-              
+    int     file;
+
+    file = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
+    if (file == -1)
+        ft_error();
+    dup2(pipe[0], STDIN_FILENO);
+    dup2(file, STDOUT_FILENO);
+    close(pipe[1]);
+    execution(argv[3], env);
 }
 
-void    child(char **argv, char **envp, int *fd)
-{
-    int     file;
+//dup2(pipe[1], STDOUT_FILENO): replaces the standard output with the writing end of the pipe,
+//meaning any output from the child process will be sent to the pipe instead of the terminal.
+//dup2(file, STDIN_FILENO): replaces the standard input with the opened file,
+//allowing the command executed to read from this file instead of the terminal.
+void    child(char **argv, char **envp, int *pipe)
+{    int     file;
 
     file = open(argv[1], O_RDONLY, 0777);
     if (file == -1)
-        ft_printf("Error opening file\n");
-        return 1;
-    dup2(fd[1], STDOUT_FILENO);
+        ft_error();
+    dup2(pipe[1], STDOUT_FILENO);
     dup2(file, STDIN_FILENO);
-    close(fd[0]);
-    execute(argv[2], envp);
+    close(pipe[0]);
+    execution(argv[2], envp);
     
 }
 
@@ -44,22 +52,25 @@ void    child(char **argv, char **envp, int *fd)
 int     main(int argc, char **argv, char **envp)
 {
     pid_t   pid;
-    int     fd[2];
+    int     pipe[2];
     
     if (argc == 5)
     {
-        if (pipe(fd) == -1)
-            ft_printf("Error openinig pipe\n");
+        if (pipe(pipe) == -1)
+            ft_error();
             return 1;
         pid = fork();
         if (pid == -1)
-            ft_printf("Fork failed\n");
+            ft_error();
         if (pid == 0)
-            create_child(argv, envp, fd);
+            child(argv, envp, pipe);
+        parent(argv, envp, pipe)
         
     }
-    else
-    {
-        ft_printf("");
-    }
+   else
+	{
+		ft_putstr_fd("\033[31mError: Bad arguments\n\e[0m", 2);
+		ft_putstr_fd("Ex: ./pipex <file1> <cmd1> <cmd2> <file2>\n", 1);
+	}
+	return (0);
 }
